@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://13.48.227.64:3005';
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://sg-backend-0cs6.onrender.com/';
 
 const client = axios.create({ baseURL: BASE_URL });
 

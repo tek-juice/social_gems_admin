@@ -67,6 +67,7 @@ export default function Campaigns() {
                 <th style={styles.th}>Objective</th>
                 <th style={styles.th}>Type</th>
                 <th style={styles.th}>Budget</th>
+                <th style={styles.th}>Milestones</th>
                 <th style={styles.th}>Status</th>
                 <th style={styles.th}>Created</th>
               </tr>
@@ -88,6 +89,16 @@ export default function Campaigns() {
                     </td>
                     <td style={styles.td}>{c.budget ? `$${Number(c.budget).toLocaleString()}` : '—'}</td>
                     <td style={styles.td}>
+                      <div style={styles.milestones}>
+                        <MilestonePip label="Inv" value={c.count_invited} color="#90a4ae" />
+                        <MilestonePip label="Acc" value={c.count_accepted} color="#42a5f5" />
+                        <MilestonePip label="Sub" value={c.count_submitted} color="#7e57c2" />
+                        <MilestonePip label="App" value={c.count_approved} color="#66bb6a" />
+                        <MilestonePip label="Rev" value={c.count_revision_required} color="#ffa726" />
+                        <MilestonePip label="Done" value={c.count_completed} color="#2e7d32" />
+                      </div>
+                    </td>
+                    <td style={styles.td}>
                       <span style={{ ...styles.badge, ...statusStyle }}>{c.status}</span>
                     </td>
                     <td style={styles.td}>{c.created_on?.split('T')[0] || '—'}</td>
@@ -100,6 +111,16 @@ export default function Campaigns() {
         </div>
       )}
     </div>
+  );
+}
+
+function MilestonePip({ label, value, color }) {
+  if (!value && value !== 0) return null;
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', marginRight: '6px' }}>
+      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: color, display: 'inline-block' }} />
+      <span style={{ fontSize: '11px', color: '#555' }}>{label} <strong>{value}</strong></span>
+    </span>
   );
 }
 
@@ -116,6 +137,7 @@ const styles = {
   rowEven: { background: '#fff' },
   rowOdd: { background: '#fafafa' },
   badge: { padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600' },
+  milestones: { display: 'flex', flexWrap: 'wrap', gap: '2px', minWidth: '160px' },
   count: { padding: '12px 16px', fontSize: '12px', color: '#aaa', margin: 0, borderTop: '1px solid #f0f0f0' },
   center: { textAlign: 'center', padding: '40px', color: '#888' },
 };

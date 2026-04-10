@@ -9,24 +9,28 @@ export default function Dashboard() {
   const [regions, setRegions] = useState([]);
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
   useEffect(() => {
-    Promise.all([getStats(), getUserGrowth(), getUsersByRegion(), getApplicationsPerCampaign()])
-      .then(([statsRes, growthRes, regionsRes, appsRes]) => {
-        setStats(statsRes.data?.data || statsRes.data);
-        setGrowth(Array.isArray(growthRes.data) ? growthRes.data : growthRes.data?.data || []);
+    const safe = (promise) => promise.catch(() => null);
+    Promise.all([
+      safe(getStats()),
+      safe(getUserGrowth()),
+      safe(getUsersByRegion()),
+      safe(getApplicationsPerCampaign()),
+    ]).then(([statsRes, growthRes, regionsRes, appsRes]) => {
+      if (statsRes) setStats(statsRes.data?.data || statsRes.data);
+      if (growthRes) setGrowth(Array.isArray(growthRes.data) ? growthRes.data : growthRes.data?.data || []);
+      if (regionsRes) {
         const regionData = Array.isArray(regionsRes.data) ? regionsRes.data : regionsRes.data?.data || [];
         setRegions(regionData.slice(0, 10));
+      }
+      if (appsRes) {
         const appsData = Array.isArray(appsRes.data) ? appsRes.data : appsRes.data?.data || [];
         setApplications(appsData);
-      })
-      .catch(() => setError('Failed to load dashboard data.'))
-      .finally(() => setLoading(false));
+      }
+    }).finally(() => setLoading(false));
   }, []);
 
   if (loading) return <div style={styles.center}>Loading...</div>;
-  if (error) return <div style={styles.center}>{error}</div>;
 
   const onboardingRate = stats?.onboardingRate ?? 0;
   const onboarded = stats?.onboardedInfluencers ?? 0;
@@ -38,10 +42,10 @@ export default function Dashboard() {
 
       {/* Stat Cards */}
       <div style={styles.cards}>
-        <StatCard title="Total Influencers" value={totalInfluencers} color="#734D20" />
-        <StatCard title="Total Brands" value={stats?.brandUsers} color="#F9D769" subtitle="Business accounts" />
-        <StatCard title="Active Campaigns" value={stats?.activeCampaigns} color="#4CAF50" />
-        <StatCard title="Total Campaigns" value={stats?.totalCampaigns} color="#2196F3" />
+        <StatCard title="Total Influencers" value={totalInfluencers} color="#734D20" icon="✨" />
+        <StatCard title="Total Brands" value={stats?.brandUsers} color="#F9D769" subtitle="Business accounts" icon="🏢" />
+        <StatCard title="Active Campaigns" value={stats?.activeCampaigns} color="#10B981" icon="📢" />
+        <StatCard title="Total Campaigns" value={stats?.totalCampaigns} color="#3B82F6" icon="📋" />
       </div>
 
       {/* Onboarding Completion */}
@@ -151,26 +155,26 @@ const EARNING_TYPE_COLORS = {
 };
 
 const styles = {
-  heading: { fontSize: '22px', fontWeight: '800', color: '#333', marginBottom: '20px' },
-  cards: { display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '32px' },
-  section: { background: '#fff', borderRadius: '12px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.07)' },
-  sectionTitle: { fontSize: '15px', fontWeight: '700', color: '#333', marginBottom: '4px', marginTop: 0 },
-  subtext: { fontSize: '12px', color: '#aaa', marginTop: 0, marginBottom: '16px' },
-  onboardingRow: { display: 'flex', alignItems: 'center', gap: '32px', flexWrap: 'wrap' },
-  onboardingStats: { minWidth: '120px' },
-  onboardingBig: { fontSize: '48px', fontWeight: '800', color: '#734D20', lineHeight: 1 },
-  onboardingSub: { fontSize: '13px', color: '#888', marginTop: '6px' },
-  progressWrap: { flex: 1, minWidth: '200px' },
-  progressBg: { height: '16px', background: '#f0f0f0', borderRadius: '8px', overflow: 'hidden' },
-  progressFill: { height: '100%', background: 'linear-gradient(90deg, #734D20, #F9D769)', borderRadius: '8px', transition: 'width 0.5s ease' },
-  progressLabels: { display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#bbb', marginTop: '4px' },
-  table: { width: '100%', borderCollapse: 'collapse' },
-  thead: { background: '#f9f9f9' },
-  th: { padding: '10px 14px', textAlign: 'left', fontSize: '12px', fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  td: { padding: '10px 14px', fontSize: '14px', color: '#333', borderTop: '1px solid #f0f0f0' },
+  heading: { fontSize: '28px', fontWeight: '800', color: '#1e293b', marginBottom: '28px', marginTop: 0 },
+  cards: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '32px' },
+  section: { background: '#fff', borderRadius: '16px', padding: '28px', marginBottom: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9' },
+  sectionTitle: { fontSize: '18px', fontWeight: '700', color: '#1e293b', marginBottom: '8px', marginTop: 0 },
+  subtext: { fontSize: '14px', color: '#64748b', marginTop: 0, marginBottom: '20px' },
+  onboardingRow: { display: 'flex', alignItems: 'center', gap: '40px', flexWrap: 'wrap' },
+  onboardingStats: { minWidth: '140px', textAlign: 'center' },
+  onboardingBig: { fontSize: '56px', fontWeight: '800', color: '#734D20', lineHeight: 1 },
+  onboardingSub: { fontSize: '14px', color: '#64748b', marginTop: '8px' },
+  progressWrap: { flex: 1, minWidth: '250px' },
+  progressBg: { height: '20px', background: '#f1f5f9', borderRadius: '10px', overflow: 'hidden' },
+  progressFill: { height: '100%', background: 'linear-gradient(90deg, #734D20, #F9D769)', borderRadius: '10px', transition: 'width 0.5s ease' },
+  progressLabels: { display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#94a3b8', marginTop: '8px' },
+  table: { width: '100%', borderCollapse: 'collapse', marginTop: '12px' },
+  thead: { background: '#f8fafc' },
+  th: { padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '2px solid #e2e8f0' },
+  td: { padding: '14px 16px', fontSize: '14px', color: '#334155', borderBottom: '1px solid #f1f5f9' },
   rowEven: { background: '#fff' },
   rowOdd: { background: '#fafafa' },
-  badge: { padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600' },
-  empty: { color: '#aaa', fontSize: '14px', textAlign: 'center', padding: '20px 0' },
-  center: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '300px', color: '#888' },
+  badge: { padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600' },
+  empty: { color: '#94a3b8', fontSize: '15px', textAlign: 'center', padding: '40px 0' },
+  center: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#64748b', fontSize: '16px' },
 };

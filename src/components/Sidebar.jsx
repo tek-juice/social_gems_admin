@@ -1,9 +1,11 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 
 const links = [
-  { to: '/', label: 'Dashboard' },
-  { to: '/users', label: 'Users' },
-  { to: '/campaigns', label: 'Campaigns' },
+  { to: '/', label: 'Dashboard', icon: '📊' },
+  { to: '/users', label: 'Users', icon: '👥' },
+  { to: '/creators', label: 'Creators', icon: '✨' },
+  { to: '/campaigns', label: 'Campaigns', icon: '📢' },
+  { to: '/jobs', label: 'Job Board', icon: '💼' },
 ];
 
 export default function Sidebar() {
@@ -18,8 +20,13 @@ export default function Sidebar() {
     <div style={styles.sidebar}>
       <div>
         <div style={styles.logo}>
-          <span style={styles.logoText}>SocialGems</span>
-          <span style={styles.logoSub}>Admin</span>
+          <img 
+            src="/social-gems-fn-200.png" 
+            alt="Social Gems" 
+            style={styles.logoImage}
+          />
+          <span style={styles.logoText}>Social Gems</span>
+          <span style={styles.logoSub}>Admin Panel</span>
         </div>
         <nav>
           {links.map((link) => (
@@ -29,22 +36,94 @@ export default function Sidebar() {
               end={link.to === '/'}
               style={({ isActive }) => ({ ...styles.link, ...(isActive ? styles.activeLink : {}) })}
             >
+              <span style={styles.linkIcon}>{link.icon}</span>
               {link.label}
             </NavLink>
           ))}
         </nav>
       </div>
-      <button style={styles.logout} onClick={handleLogout}>Logout</button>
+      <button style={styles.logout} onClick={handleLogout}>
+        <span style={styles.linkIcon}>🚪</span>
+        Logout
+      </button>
     </div>
   );
 }
 
 const styles = {
-  sidebar: { width: '220px', minHeight: '100vh', background: '#734D20', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '24px 0', position: 'fixed', top: 0, left: 0 },
-  logo: { padding: '0 20px 28px', borderBottom: '1px solid rgba(255,255,255,0.15)', marginBottom: '16px' },
-  logoText: { display: 'block', color: '#F9D769', fontWeight: '800', fontSize: '18px' },
-  logoSub: { color: 'rgba(255,255,255,0.6)', fontSize: '12px' },
-  link: { display: 'block', padding: '12px 20px', color: 'rgba(255,255,255,0.75)', textDecoration: 'none', fontSize: '14px', fontWeight: '500', borderLeft: '3px solid transparent' },
-  activeLink: { color: '#F9D769', background: 'rgba(255,255,255,0.1)', borderLeft: '3px solid #F9D769' },
-  logout: { margin: '0 16px', padding: '10px', background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' },
+  sidebar: { 
+    width: '260px', 
+    minHeight: '100vh', 
+    background: 'linear-gradient(180deg, #734D20 0%, #5C3D19 100%)', 
+    display: 'flex', 
+    flexDirection: 'column', 
+    justifyContent: 'space-between', 
+    padding: '24px 0', 
+    position: 'fixed', 
+    top: 0, 
+    left: 0,
+    boxShadow: '4px 0 20px rgba(115, 77, 32, 0.15)',
+    zIndex: 100
+  },
+  logo: { 
+    padding: '0 24px 32px', 
+    borderBottom: '1px solid rgba(255,255,255,0.1)', 
+    marginBottom: '24px',
+    textAlign: 'center'
+  },
+  logoImage: {
+    height: '50px',
+    width: 'auto',
+    marginBottom: '12px',
+    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
+  },
+  logoText: { 
+    display: 'block', 
+    color: '#F9D769', 
+    fontWeight: '800', 
+    fontSize: '20px',
+    letterSpacing: '-0.3px'
+  },
+  logoSub: { 
+    color: 'rgba(255,255,255,0.6)', 
+    fontSize: '12px',
+    marginTop: '4px'
+  },
+  link: { 
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '14px 24px', 
+    color: 'rgba(255,255,255,0.8)', 
+    textDecoration: 'none', 
+    fontSize: '15px', 
+    fontWeight: '500', 
+    borderLeft: '3px solid transparent',
+    transition: 'all 0.2s ease'
+  },
+  linkIcon: {
+    fontSize: '18px',
+    width: '24px'
+  },
+  activeLink: { 
+    color: '#F9D769', 
+    background: 'rgba(255,255,255,0.1)', 
+    borderLeft: '3px solid #F9D769'
+  },
+  logout: { 
+    margin: '0 16px 16px', 
+    padding: '14px', 
+    background: 'rgba(255,255,255,0.1)', 
+    color: '#fff', 
+    border: 'none', 
+    borderRadius: '12px', 
+    cursor: 'pointer', 
+    fontSize: '15px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    justifyContent: 'center',
+    transition: 'all 0.2s ease',
+    fontWeight: '500'
+  },
 };

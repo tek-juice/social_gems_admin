@@ -10,3 +10,6 @@ export const getCampaigns = () => client.get('/admin/getCampaigns');
 export const getUsers = () => client.get('/admin/getUsers');
 export const getWalletStats = () => client.get('/admin/getWalletStats');
 export const getApplicationsPerCampaign = () => client.get('/admin/getApplicationsPerCampaign');
+export const filterCreators = (params) => client.get('/admin/filterCreators', { params });
+export const getIndustries = () => client.get('/admin/industries');
+export const getJobs = (params) => client.get('/admin/getJobs', { params });
