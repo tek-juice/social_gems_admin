@@ -13,7 +13,7 @@ function PrivateLayout({ children }) {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc' }}>
       <Sidebar />
-      <main style={{ marginLeft: '260px', flex: 1, padding: '32px', width: 'calc(100% - 260px)', boxSizing: 'border-box' }}>
+      <main style={{ marginLeft: '260px', flex: 1, padding: '16px', width: 'calc(100% - 260px)', boxSizing: 'border-box' }}>
         {children}
       </main>
     </div>

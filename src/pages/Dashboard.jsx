@@ -157,7 +157,7 @@ const EARNING_TYPE_COLORS = {
 const styles = {
   heading: { fontSize: '28px', fontWeight: '800', color: '#1e293b', marginBottom: '28px', marginTop: 0 },
   cards: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '32px' },
-  section: { background: '#fff', borderRadius: '16px', padding: '28px', marginBottom: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9' },
+  section: { background: '#fff', borderRadius: '12px', padding: '20px', marginBottom: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9' },
   sectionTitle: { fontSize: '18px', fontWeight: '700', color: '#1e293b', marginBottom: '8px', marginTop: 0 },
   subtext: { fontSize: '14px', color: '#64748b', marginTop: 0, marginBottom: '20px' },
   onboardingRow: { display: 'flex', alignItems: 'center', gap: '40px', flexWrap: 'wrap' },
