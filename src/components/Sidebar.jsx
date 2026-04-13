@@ -6,6 +6,9 @@ const links = [
   { to: '/creators', label: 'Creators', icon: '✨' },
   { to: '/campaigns', label: 'Campaigns', icon: '📢' },
   { to: '/jobs', label: 'Job Board', icon: '💼' },
+  { to: '/submissions', label: 'Submissions', icon: '📝' },
+  { to: '/finances', label: 'Finances', icon: '💰' },
+  { to: '/community', label: 'Community', icon: '💬' },
 ];
 
 export default function Sidebar() {
@@ -21,7 +24,7 @@ export default function Sidebar() {
       <div>
         <div style={styles.logo}>
           <img 
-            src="/social-gems-fn-200.png" 
+            src="social-gems-fn-200.png" 
             alt="Social Gems" 
             style={styles.logoImage}
           />

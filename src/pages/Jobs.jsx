@@ -136,7 +136,16 @@ export default function Jobs() {
                       {j.comp_type === 'product' ? 'Product' : `${Number(j.comp_amount).toLocaleString()} ${j.comp_currency}`}
                     </td>
                     <td style={styles.td}>{Number(j.min_followers).toLocaleString()}</td>
-                    <td style={styles.td}>{j.deadline ? new Date(j.deadline).toLocaleDateString() : '—'}</td>
+                    <td style={{
+                      ...styles.td,
+                      color: j.deadline && new Date(j.deadline) < new Date() && j.status === 'active' ? '#c62828' : '#334155',
+                      fontWeight: j.deadline && new Date(j.deadline) < new Date() && j.status === 'active' ? '700' : '400'
+                    }}>
+                      {j.deadline ? new Date(j.deadline).toLocaleDateString() : '—'}
+                      {j.deadline && new Date(j.deadline) < new Date() && j.status === 'active' && (
+                        <span style={{ marginLeft: '4px' }}>⚠️ Overdue</span>
+                      )}
+                    </td>
                     <td style={{ ...styles.td, textAlign: 'center', fontWeight: '700', color: '#1565c0' }}>
                       {j.interest_count || 0}
                     </td>

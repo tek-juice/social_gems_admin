@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://sg-backend-0cs6.onrender.com/';
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://late-hours-should-democrats.trycloudflare.com/';
 
 const client = axios.create({ baseURL: BASE_URL });
 
@@ -15,7 +15,7 @@ client.interceptors.response.use(
   (err) => {
     if (err.response?.status === 401) {
       localStorage.removeItem('admin_token');
-      window.location.href = '/login';
+      window.location.href = '/social_gems_admin/login';
     }
     return Promise.reject(err);
   }

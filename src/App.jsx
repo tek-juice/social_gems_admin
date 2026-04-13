@@ -5,6 +5,9 @@ import Users from './pages/Users';
 import Campaigns from './pages/Campaigns';
 import Creators from './pages/Creators';
 import Jobs from './pages/Jobs';
+import Submissions from './pages/Submissions';
+import Finances from './pages/Finances';
+import Community from './pages/Community';
 import Sidebar from './components/Sidebar';
 
 function PrivateLayout({ children }) {
@@ -22,7 +25,7 @@ function PrivateLayout({ children }) {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/social_gems_admin">
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<PrivateLayout><Dashboard /></PrivateLayout>} />
@@ -30,6 +33,9 @@ export default function App() {
         <Route path="/campaigns" element={<PrivateLayout><Campaigns /></PrivateLayout>} />
         <Route path="/creators" element={<PrivateLayout><Creators /></PrivateLayout>} />
         <Route path="/jobs" element={<PrivateLayout><Jobs /></PrivateLayout>} />
+        <Route path="/submissions" element={<PrivateLayout><Submissions /></PrivateLayout>} />
+        <Route path="/finances" element={<PrivateLayout><Finances /></PrivateLayout>} />
+        <Route path="/community" element={<PrivateLayout><Community /></PrivateLayout>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

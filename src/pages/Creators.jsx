@@ -22,6 +22,7 @@ export default function Creators() {
     level_id: '',
     industry_id: '',
     min_rating: '',
+    min_reliability_score: '',
   });
 
   const fetchCreators = useCallback(async (overrides = {}) => {
@@ -62,7 +63,7 @@ export default function Creators() {
   };
 
   const handleReset = () => {
-    const reset = { q: '', location: '', level_id: '', industry_id: '', min_rating: '' };
+    const reset = { q: '', location: '', level_id: '', industry_id: '', min_rating: '', min_reliability_score: '' };
     setFilters(reset);
     setTimeout(() => fetchCreators({ ...reset, page: 1 }), 0);
   };
@@ -126,6 +127,16 @@ export default function Creators() {
             value={filters.min_rating}
             onChange={(e) => handleFilterChange('min_rating', e.target.value)}
           />
+          <input
+            style={{ ...styles.input, width: '150px' }}
+            type="number"
+            placeholder="Min reliability (0-5)"
+            min="0"
+            max="5"
+            step="0.1"
+            value={filters.min_reliability_score}
+            onChange={(e) => handleFilterChange('min_reliability_score', e.target.value)}
+          />
         </div>
         <div style={styles.filterActions}>
           <button type="submit" style={styles.btnPrimary}>Search</button>
@@ -147,6 +158,7 @@ export default function Creators() {
                   <th style={styles.th}>Tier</th>
                   <th style={styles.th}>Niche</th>
                   <th style={styles.th}>Rating</th>
+                  <th style={styles.th}>Reliability</th>
                   <th style={styles.th}>Status</th>
                   <th style={styles.th}>Joined</th>
                 </tr>
@@ -154,7 +166,7 @@ export default function Creators() {
               <tbody>
                 {creators.length === 0 ? (
                   <tr>
-                    <td colSpan={8} style={{ ...styles.td, textAlign: 'center', color: '#aaa', padding: '40px' }}>
+                    <td colSpan={9} style={{ ...styles.td, textAlign: 'center', color: '#aaa', padding: '40px' }}>
                       No creators found
                     </td>
                   </tr>
@@ -185,6 +197,15 @@ export default function Creators() {
                         <span style={{ ...styles.ratingBadge, color: ratingColor(c.influencer_rating), borderColor: ratingColor(c.influencer_rating) }}>
                           {c.influencer_rating != null ? Number(c.influencer_rating).toFixed(1) : '—'}
                         </span>
+                      </td>
+                      <td style={styles.td}>
+                        {c.reliability_score != null ? (
+                          <span style={{ ...styles.ratingBadge, color: ratingColor(c.reliability_score), borderColor: ratingColor(c.reliability_score) }}>
+                            {Number(c.reliability_score).toFixed(1)}
+                          </span>
+                        ) : (
+                          <span style={{ color: '#aaa', fontSize: '13px' }}>—</span>
+                        )}
                       </td>
                       <td style={styles.td}>
                         <span style={{ ...styles.badge, background: c.status === 'active' ? '#e8f5e9' : '#fdecea', color: c.status === 'active' ? '#2e7d32' : '#c62828' }}>
