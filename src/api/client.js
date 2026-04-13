@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://late-hours-should-democrats.trycloudflare.com/';
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://sg-backend-0cs6.onrender.com/';
 
 const client = axios.create({ baseURL: BASE_URL });
 
