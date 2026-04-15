@@ -22,7 +22,7 @@ const managerLinks = [
 
 export default function Sidebar() {
   const navigate = useNavigate();
-  const { isSuperAdmin, isCampaignManager, user } = useAuth();
+  const { role, isSuperAdmin, isCampaignManager, user } = useAuth();
 
   // If role is empty (legacy session pre-role-storage), treat as super_admin in the UI
   const effectivelyAdmin = !role || isSuperAdmin;
