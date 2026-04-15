@@ -8,7 +8,10 @@ import Jobs from './pages/Jobs';
 import Submissions from './pages/Submissions';
 import Finances from './pages/Finances';
 import Community from './pages/Community';
+import CampaignManagerDashboard from './pages/CampaignManagerDashboard';
+import CampaignManagersAdmin from './pages/CampaignManagersAdmin';
 import Sidebar from './components/Sidebar';
+import { useAuth } from './hooks/useAuth';
 
 function PrivateLayout({ children }) {
   const token = localStorage.getItem('admin_token');
@@ -23,12 +26,35 @@ function PrivateLayout({ children }) {
   );
 }
 
+function RoleGuard({ allow, children }) {
+  const { role } = useAuth();
+  const allowed = Array.isArray(allow) ? allow : [allow];
+  const normalised = role?.toLowerCase();
+  if (!allowed.some(r => r.toLowerCase() === normalised)) {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+}
+
 export default function App() {
   return (
     <BrowserRouter basename="/social_gems_admin">
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/" element={<PrivateLayout><Dashboard /></PrivateLayout>} />
+
+        {/* Campaign Manager home */}
+        <Route path="/cm-dashboard" element={
+          <PrivateLayout><CampaignManagerDashboard /></PrivateLayout>
+        } />
+
+        {/* Super Admin / Admin only pages */}
+        <Route path="/" element={
+          <PrivateLayout>
+            <RoleGuard allow={['super_admin','SUPER_ADMIN','admin','ADMIN']}>
+              <Dashboard />
+            </RoleGuard>
+          </PrivateLayout>
+        } />
         <Route path="/users" element={<PrivateLayout><Users /></PrivateLayout>} />
         <Route path="/campaigns" element={<PrivateLayout><Campaigns /></PrivateLayout>} />
         <Route path="/creators" element={<PrivateLayout><Creators /></PrivateLayout>} />
@@ -36,8 +62,21 @@ export default function App() {
         <Route path="/submissions" element={<PrivateLayout><Submissions /></PrivateLayout>} />
         <Route path="/finances" element={<PrivateLayout><Finances /></PrivateLayout>} />
         <Route path="/community" element={<PrivateLayout><Community /></PrivateLayout>} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/campaign-managers" element={
+          <PrivateLayout>
+            <RoleGuard allow={['super_admin','SUPER_ADMIN']}>
+              <CampaignManagersAdmin />
+            </RoleGuard>
+          </PrivateLayout>
+        } />
+
+        <Route path="*" element={<RoleDefaultRedirect />} />
       </Routes>
     </BrowserRouter>
   );
+}
+
+function RoleDefaultRedirect() {
+  const { isCampaignManager } = useAuth();
+  return <Navigate to={isCampaignManager ? '/cm-dashboard' : '/'} replace />;
 }

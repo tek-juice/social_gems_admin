@@ -20,13 +20,17 @@ export default function Login() {
       const data = res.data?.data;
       // Normal login
       const token = data?.jwt || data?.token || res.data?.token;
+      const role = data?.role || '';
       // Temporary password login (202)
       const tempToken = data?.temporary_token;
       if (token) {
         localStorage.setItem('admin_token', token);
-        navigate('/');
+        localStorage.setItem('admin_role', role);
+        localStorage.setItem('admin_user', JSON.stringify({ first_name: data?.first_name, last_name: data?.last_name, email: data?.email, role }));
+        navigate(role === 'campaign_manager' ? '/cm-dashboard' : '/');
       } else if (tempToken) {
         localStorage.setItem('admin_token', tempToken);
+        localStorage.setItem('admin_role', role);
         navigate('/');
       } else {
         setError('Invalid credentials');
@@ -44,7 +48,7 @@ export default function Login() {
       <div style={styles.card}>
         <div style={styles.logoContainer}>
           <img 
-            src="/social-gems-fn-200.png" 
+            src="social-gems-fn-200.png"
             alt="Social Gems Logo" 
             style={styles.logo}
           />

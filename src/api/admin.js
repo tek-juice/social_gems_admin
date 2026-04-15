@@ -30,3 +30,20 @@ export const getDelayedCampaigns = () => client.get('/admin/delayedCampaigns');
 
 // Community feed
 export const getAdminCommunityFeed = (params) => client.get('/admin/communityFeed', { params });
+
+// Campaign Manager
+export const createCampaignManager = (data) =>
+  client.post('/admin/adminRegister', { ...data, role: 'campaign_manager' });
+export const getCampaignManagers = () => client.get('/admin/campaignManagers');
+export const updateCampaignManager = (id, data) => client.put(`/admin/adminUsers/${id}`, data);
+export const deactivateAdminUser = (id) => client.post('/admin/deactivateAdminUser', { id });
+export const reactivateAdminUser = (id) => client.post('/admin/reactivateAdminUser', { id });
+export const getAllCampaigns = () => client.get('/admin/getCampaigns');
+export const assignCampaign = (admin_id, campaign_id) =>
+  client.post('/admin/assignCampaign', { admin_id, campaign_id });
+export const unassignCampaign = (admin_id, campaign_id) =>
+  client.delete('/admin/assignCampaign', { data: { admin_id, campaign_id } });
+export const getMyCampaigns = () => client.get('/admin/myCampaigns');
+export const getMyCampaignStats = () => client.get('/admin/myCampaignStats');
+export const getMyCampaignApplicants = (campaignId) =>
+  client.get(`/admin/myCampaignApplicants/${campaignId}`);
