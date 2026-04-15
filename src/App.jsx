@@ -28,8 +28,10 @@ function PrivateLayout({ children }) {
 
 function RoleGuard({ allow, children }) {
   const { role } = useAuth();
+  // If role is unknown/empty (legacy session), allow through — backend will enforce auth
+  if (!role) return children;
   const allowed = Array.isArray(allow) ? allow : [allow];
-  const normalised = role?.toLowerCase();
+  const normalised = role.toLowerCase();
   if (!allowed.some(r => r.toLowerCase() === normalised)) {
     return <Navigate to="/" replace />;
   }
@@ -47,14 +49,8 @@ export default function App() {
           <PrivateLayout><CampaignManagerDashboard /></PrivateLayout>
         } />
 
-        {/* Super Admin / Admin only pages */}
-        <Route path="/" element={
-          <PrivateLayout>
-            <RoleGuard allow={['super_admin','SUPER_ADMIN','admin','ADMIN']}>
-              <Dashboard />
-            </RoleGuard>
-          </PrivateLayout>
-        } />
+        {/* Admin dashboard — accessible to all admin roles */}
+        <Route path="/" element={<PrivateLayout><Dashboard /></PrivateLayout>} />
         <Route path="/users" element={<PrivateLayout><Users /></PrivateLayout>} />
         <Route path="/campaigns" element={<PrivateLayout><Campaigns /></PrivateLayout>} />
         <Route path="/creators" element={<PrivateLayout><Creators /></PrivateLayout>} />
