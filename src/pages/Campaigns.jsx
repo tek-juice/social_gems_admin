@@ -21,6 +21,7 @@ export default function Campaigns() {
   const [delayedLoading, setDelayedLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
   const [mainTab, setMainTab] = useState('all'); // 'all' | 'delayed'
 
   useEffect(() => {
@@ -49,7 +50,8 @@ export default function Campaigns() {
     const matchSearch = c.title?.toLowerCase().includes(search.toLowerCase()) ||
       c.name?.toLowerCase().includes(search.toLowerCase());
     const matchFilter = filter === 'all' || c.status === filter;
-    return matchSearch && matchFilter;
+    const matchType = typeFilter === 'all' || c.earning_type === typeFilter;
+    return matchSearch && matchFilter && matchType;
   });
 
   return (
@@ -90,6 +92,12 @@ export default function Campaigns() {
               <option value="draft">Draft</option>
               <option value="closed">Closed</option>
             </select>
+            <select style={styles.select} value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+              <option value="all">All Types</option>
+              <option value="paid">Paid</option>
+              <option value="affiliate">Affiliate</option>
+              <option value="barter">Free Collab</option>
+            </select>
           </div>
 
           {loading ? (
@@ -122,6 +130,17 @@ export default function Campaigns() {
                             <span style={{ ...styles.badge, ...EARNING_TYPE_COLORS[c.earning_type] }}>
                               {c.earning_type === 'barter' ? 'Free Collab' : c.earning_type}
                             </span>
+                          )}
+                          {c.earning_type === 'affiliate' && c.affiliate_link && (
+                            <a
+                              href={c.affiliate_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={styles.affiliateLink}
+                              title={c.affiliate_link}
+                            >
+                              🔗 link
+                            </a>
                           )}
                         </td>
                         <td style={styles.td}>{c.budget ? `$${Number(c.budget).toLocaleString()}` : '—'}</td>
@@ -262,6 +281,7 @@ const styles = {
   rowEven: { background: '#fff' },
   rowOdd: { background: '#fafafa' },
   badge: { padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600' },
+  affiliateLink: { display: 'block', marginTop: '4px', fontSize: '11px', color: '#512da8', textDecoration: 'none' },
   milestones: { display: 'flex', flexWrap: 'wrap', gap: '2px', minWidth: '160px' },
   count: { padding: '12px 16px', fontSize: '12px', color: '#aaa', margin: 0, borderTop: '1px solid #f0f0f0' },
   center: { textAlign: 'center', padding: '40px', color: '#888' },
