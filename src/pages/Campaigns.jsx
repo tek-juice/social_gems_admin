@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
-import { getCampaigns, getDelayedCampaigns } from '../api/admin';
+import { getCampaigns, getDelayedCampaigns, updateCampaignAccessTier } from '../api/admin';
+
+const TIER_COLORS = {
+  free: { background: '#f5f5f5', color: '#666' },
+  plus: { background: '#e3f2fd', color: '#1565c0' },
+  pro: { background: '#ede7f6', color: '#512da8' },
+};
 
 const STATUS_COLORS = {
   active: { background: '#e8f5e9', color: '#2e7d32' },
@@ -23,6 +29,10 @@ export default function Campaigns() {
   const [filter, setFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [mainTab, setMainTab] = useState('all'); // 'all' | 'delayed'
+  const [editingCampaign, setEditingCampaign] = useState(null);
+  const [tierForm, setTierForm] = useState({ access_tier: 'free', early_access_hours: 0 });
+  const [tierSaving, setTierSaving] = useState(false);
+  const [tierError, setTierError] = useState('');
 
   useEffect(() => {
     getCampaigns()
@@ -45,6 +55,35 @@ export default function Campaigns() {
         .finally(() => setDelayedLoading(false));
     }
   }, [mainTab, delayed.length]);
+
+  const openTierEdit = (campaign) => {
+    setEditingCampaign(campaign);
+    setTierForm({
+      access_tier: campaign.access_tier || 'free',
+      early_access_hours: campaign.early_access_hours || 0,
+    });
+    setTierError('');
+  };
+
+  const saveTier = async () => {
+    setTierSaving(true);
+    setTierError('');
+    try {
+      await updateCampaignAccessTier(editingCampaign.campaign_id, tierForm.access_tier, Number(tierForm.early_access_hours));
+      setCampaigns((prev) =>
+        prev.map((c) =>
+          c.campaign_id === editingCampaign.campaign_id
+            ? { ...c, access_tier: tierForm.access_tier, early_access_hours: Number(tierForm.early_access_hours) }
+            : c
+        )
+      );
+      setEditingCampaign(null);
+    } catch (e) {
+      setTierError(e?.response?.data?.message || 'Failed to update. Try again.');
+    } finally {
+      setTierSaving(false);
+    }
+  };
 
   const filtered = campaigns.filter((c) => {
     const matchSearch = c.title?.toLowerCase().includes(search.toLowerCase()) ||
@@ -113,6 +152,7 @@ export default function Campaigns() {
                     <th style={styles.th}>Type</th>
                     <th style={styles.th}>Budget</th>
                     <th style={styles.th}>Milestones</th>
+                    <th style={styles.th}>Access Tier</th>
                     <th style={styles.th}>Status</th>
                     <th style={styles.th}>Created</th>
                   </tr>
@@ -152,6 +192,17 @@ export default function Campaigns() {
                             <MilestonePip label="App" value={c.count_approved} color="#66bb6a" />
                             <MilestonePip label="Rev" value={c.count_revision_required} color="#ffa726" />
                             <MilestonePip label="Done" value={c.count_completed} color="#2e7d32" />
+                          </div>
+                        </td>
+                        <td style={styles.td}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ ...styles.badge, ...TIER_COLORS[c.access_tier || 'free'] }}>
+                              {c.access_tier || 'free'}
+                            </span>
+                            {c.early_access_hours > 0 && (
+                              <span style={{ fontSize: '10px', color: '#888' }}>{c.early_access_hours}h early</span>
+                            )}
+                            <button onClick={() => openTierEdit(c)} style={styles.editBtn} title="Edit tier">✏️</button>
                           </div>
                         </td>
                         <td style={styles.td}>
@@ -242,6 +293,41 @@ export default function Campaigns() {
           </div>
         )
       )}
+
+      {editingCampaign && (
+        <div style={styles.modalOverlay} onClick={() => setEditingCampaign(null)}>
+          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h3 style={styles.modalTitle}>Set Access Tier</h3>
+            <p style={styles.modalSubtitle}>{editingCampaign.title}</p>
+            <label style={styles.label}>Access Tier</label>
+            <select
+              style={styles.modalSelect}
+              value={tierForm.access_tier}
+              onChange={(e) => setTierForm((f) => ({ ...f, access_tier: e.target.value }))}
+            >
+              <option value="free">Free — visible to all</option>
+              <option value="plus">Plus — Creator Plus &amp; Pro only</option>
+              <option value="pro">Pro — Creator Pro only</option>
+            </select>
+            <label style={styles.label}>Early Access (hours before public)</label>
+            <input
+              type="number"
+              min="0"
+              style={styles.modalInput}
+              value={tierForm.early_access_hours}
+              onChange={(e) => setTierForm((f) => ({ ...f, early_access_hours: e.target.value }))}
+              placeholder="0 = no early access"
+            />
+            {tierError && <p style={styles.tierError}>{tierError}</p>}
+            <div style={styles.modalActions}>
+              <button style={styles.cancelBtn} onClick={() => setEditingCampaign(null)}>Cancel</button>
+              <button style={styles.saveBtn} onClick={saveTier} disabled={tierSaving}>
+                {tierSaving ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -285,4 +371,22 @@ const styles = {
   milestones: { display: 'flex', flexWrap: 'wrap', gap: '2px', minWidth: '160px' },
   count: { padding: '12px 16px', fontSize: '12px', color: '#aaa', margin: 0, borderTop: '1px solid #f0f0f0' },
   center: { textAlign: 'center', padding: '40px', color: '#888' },
+  editBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', padding: '0 2px', lineHeight: 1 },
+  modalOverlay: {
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+  },
+  modal: {
+    background: '#fff', borderRadius: '12px', padding: '28px 32px',
+    width: '360px', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+  },
+  modalTitle: { fontSize: '17px', fontWeight: '700', marginBottom: '4px' },
+  modalSubtitle: { fontSize: '13px', color: '#888', marginBottom: '20px', marginTop: 0 },
+  label: { display: 'block', fontSize: '12px', fontWeight: '600', color: '#555', marginBottom: '6px', marginTop: '14px' },
+  modalSelect: { width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px' },
+  modalInput: { width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' },
+  tierError: { color: '#c62828', fontSize: '13px', marginTop: '8px' },
+  modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '24px' },
+  cancelBtn: { padding: '9px 18px', borderRadius: '8px', border: '1px solid #ddd', background: '#fff', cursor: 'pointer', fontSize: '14px' },
+  saveBtn: { padding: '9px 18px', borderRadius: '8px', border: 'none', background: '#734D20', color: '#fff', cursor: 'pointer', fontSize: '14px', fontWeight: '600' },
 };

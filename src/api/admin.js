@@ -7,6 +7,8 @@ export const getStats = () => client.get('/admin/getStats');
 export const getUserGrowth = () => client.get('/admin/getUserGrowth');
 export const getUsersByRegion = () => client.get('/admin/getUsersByRegion');
 export const getCampaigns = () => client.get('/admin/getCampaigns');
+export const updateCampaignAccessTier = (id, access_tier, early_access_hours) =>
+  client.patch(`/admin/campaigns/${id}/access-tier`, { access_tier, early_access_hours });
 export const getUsers = () => client.get('/admin/getUsers');
 export const getWalletStats = () => client.get('/admin/getWalletStats');
 export const getApplicationsPerCampaign = () => client.get('/admin/getApplicationsPerCampaign');

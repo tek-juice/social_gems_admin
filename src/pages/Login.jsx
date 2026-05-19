@@ -214,7 +214,8 @@ const styles = {
     boxSizing: 'border-box',
     transition: 'all 0.2s ease',
     outline: 'none',
-    backgroundColor: '#F9FAFB'
+    backgroundColor: '#F9FAFB',
+    color: '#111827'
   },
   inputFocus: {
     borderColor: '#F9D769',
