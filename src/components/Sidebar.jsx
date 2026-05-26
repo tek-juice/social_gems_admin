@@ -14,6 +14,7 @@ const adminLinks = [
 
 const superAdminExtra = [
   { to: '/campaign-managers', label: 'Campaign Managers', icon: '🎯' },
+  { to: '/pending-deletions', label: 'Pending Deletions', icon: '🗑️' },
 ];
 
 const managerLinks = [

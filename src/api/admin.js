@@ -49,3 +49,20 @@ export const getMyCampaigns = () => client.get('/admin/myCampaigns');
 export const getMyCampaignStats = () => client.get('/admin/myCampaignStats');
 export const getMyCampaignApplicants = (campaignId) =>
   client.get(`/admin/myCampaignApplicants/${campaignId}`);
+
+// Maker-checker / pending delete requests
+export const getMakerCheckerRequests = () => client.get('/maker-checker/requests');
+export const actionMakerCheckerRequest = (requestId, action) => 
+  client.post(`/maker-checker/requests/${requestId}/action`, { action });
+export const executeMakerCheckerRequest = (requestId) => 
+  client.post(`/maker-checker/requests/${requestId}/execute`);
+
+// User management (safe delete/verify from admin)
+export const deactivateUser = (user_id, reason) =>
+  client.post('/admin/deactivateUser', { user_id, influencer_id: user_id, reason });
+
+export const activateUser = (user_id) =>
+  client.post('/admin/activateUser', { user_id });
+
+export const verifyUserEmail = (email) =>
+  client.post('/admin/forceVerifyEmail', { email });

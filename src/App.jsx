@@ -10,6 +10,7 @@ import Finances from './pages/Finances';
 import Community from './pages/Community';
 import CampaignManagerDashboard from './pages/CampaignManagerDashboard';
 import CampaignManagersAdmin from './pages/CampaignManagersAdmin';
+import PendingDeletions from './pages/PendingDeletions';
 import Sidebar from './components/Sidebar';
 import { useAuth } from './hooks/useAuth';
 
@@ -52,6 +53,7 @@ export default function App() {
         {/* Admin dashboard — accessible to all admin roles */}
         <Route path="/" element={<PrivateLayout><Dashboard /></PrivateLayout>} />
         <Route path="/users" element={<PrivateLayout><Users /></PrivateLayout>} />
+        <Route path="/pending-deletions" element={<PrivateLayout><PendingDeletions /></PrivateLayout>} />
         <Route path="/campaigns" element={<PrivateLayout><Campaigns /></PrivateLayout>} />
         <Route path="/creators" element={<PrivateLayout><Creators /></PrivateLayout>} />
         <Route path="/jobs" element={<PrivateLayout><Jobs /></PrivateLayout>} />

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getUsers } from '../api/admin';
+import { getUsers, deactivateUser, activateUser, verifyUserEmail } from '../api/admin';
 
 const TIER_STYLES = {
   pro:  { background: '#ede7f6', color: '#512da8', label: 'Pro' },
@@ -14,16 +14,27 @@ export default function Users() {
   const [filter, setFilter] = useState('all');
   const [tierFilter, setTierFilter] = useState('all');
 
-  useEffect(() => {
+  // Safe action modal state
+  const [modal, setModal] = useState({ open: false, type: null, user: null });
+  const [reason, setReason] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const fetchUsers = () => {
+    setLoading(true);
     getUsers()
       .then((res) => {
         const data = res.data?.data || res.data;
         setUsers(Array.isArray(data) ? data : []);
       })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchUsers();
   }, []);
 
   const filtered = users.filter((u) => {
+
     const matchSearch =
       u.first_name?.toLowerCase().includes(search.toLowerCase()) ||
       u.email?.toLowerCase().includes(search.toLowerCase());
@@ -34,6 +45,51 @@ export default function Users() {
 
   const proCount = users.filter((u) => u.subscription_tier === 'pro').length;
   const plusCount = users.filter((u) => u.subscription_tier === 'plus').length;
+
+  const openModal = (type, user) => {
+    setModal({ open: true, type, user });
+    setReason('');
+  };
+
+  const closeModal = () => {
+    setModal({ open: false, type: null, user: null });
+    setReason('');
+    setActionLoading(false);
+  };
+
+  const handleAction = async () => {
+    if (!modal.user) return;
+
+    const userId = modal.user.user_id || modal.user.id;
+    const email = modal.user.email;
+
+    setActionLoading(true);
+
+    try {
+      if (modal.type === 'deactivate' || modal.type === 'delete') {
+        if (!reason.trim()) {
+          alert('Please provide a reason');
+          setActionLoading(false);
+          return;
+        }
+        await deactivateUser(userId, reason.trim());
+        alert(modal.type === 'delete' ? 'Delete request submitted (maker-checker)' : 'User deactivated');
+      } else if (modal.type === 'activate') {
+        await activateUser(userId);
+        alert('User activated');
+      } else if (modal.type === 'verify') {
+        await verifyUserEmail(email);
+        alert('Email marked as verified');
+      }
+
+      closeModal();
+      fetchUsers(); // refresh list
+    } catch (err) {
+      console.error(err);
+      alert('Action failed: ' + (err?.response?.data?.message || err.message));
+      setActionLoading(false);
+    }
+  };
 
   return (
     <div>
@@ -86,8 +142,10 @@ export default function Users() {
                 <th style={styles.th}>Plan</th>
                 <th style={styles.th}>Type</th>
                 <th style={styles.th}>Country</th>
-                <th style={styles.th}>Status</th>
-                <th style={styles.th}>Joined</th>
+              <th style={styles.th}>Status</th>
+              <th style={styles.th}>Joined</th>
+              <th style={styles.th}>Actions</th>
+
               </tr>
             </thead>
             <tbody>
@@ -124,17 +182,93 @@ export default function Users() {
                       </span>
                     </td>
                     <td style={styles.td}>{u.created_at?.split('T')[0] || '—'}</td>
+                    <td style={styles.td}>
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        {u.status !== 'active' ? (
+                          <button style={styles.actionBtn} onClick={() => openModal('activate', u)}>Activate</button>
+                        ) : (
+                          <button style={{ ...styles.actionBtn, background: '#c62828', color: '#fff' }} onClick={() => openModal('deactivate', u)}>Deactivate</button>
+                        )}
+
+                        {u.email_verified !== 'yes' && (
+                          <button style={{ ...styles.actionBtn, background: '#1565c0', color: '#fff' }} onClick={() => openModal('verify', u)}>
+                            Verify Email
+                          </button>
+                        )}
+
+                        <button
+                          style={{ ...styles.actionBtn, background: '#6a1b9a', color: '#fff' }}
+                          onClick={() => openModal('delete', u)}
+                          title="Submit delete request (requires reason + maker-checker for non-super admins)"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-          <p style={styles.count}>{filtered.length} users</p>
-        </div>
-      )}
-    </div>
-  );
-}
+           <p style={styles.count}>{filtered.length} users</p>
+         </div>
+       )}
+
+       {/* Safe Action Confirmation Modal */}
+       {modal.open && modal.user && (
+         <div style={styles.modalOverlay} onClick={closeModal}>
+           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+             <h3 style={{ marginTop: 0 }}>
+               {modal.type === 'delete' ? 'Request Account Deletion' : 
+                modal.type === 'deactivate' ? 'Deactivate User' : 
+                modal.type === 'activate' ? 'Activate User' : 'Verify Email'}
+             </h3>
+
+             <p><strong>{modal.user.first_name} {modal.user.last_name}</strong> ({modal.user.email})</p>
+
+             {(modal.type === 'delete' || modal.type === 'deactivate') && (
+               <>
+                 <label style={{ display: 'block', margin: '12px 0 4px', fontSize: 13, color: '#555' }}>
+                   Reason (required)
+                 </label>
+                 <textarea
+                   style={styles.textarea}
+                   value={reason}
+                   onChange={(e) => setReason(e.target.value)}
+                   placeholder="Enter reason for this action..."
+                   rows={3}
+                 />
+                  <p style={{ fontSize: 11, color: '#c62828', marginTop: 4 }}>
+                    This action is logged and may require maker-checker approval.
+                    Reason must include the word "requested" (production only).
+                  </p>
+
+               </>
+             )}
+
+             <div style={{ display: 'flex', gap: '10px', marginTop: 16 }}>
+               <button 
+                 style={{ ...styles.modalBtn, background: '#eee', color: '#333' }} 
+                 onClick={closeModal}
+                 disabled={actionLoading}
+               >
+                 Cancel
+               </button>
+               <button 
+                 style={styles.modalBtn} 
+                 onClick={handleAction}
+                 disabled={actionLoading || ((modal.type === 'delete' || modal.type === 'deactivate') && !reason.trim())}
+               >
+                 {actionLoading ? 'Processing...' : 'Confirm'}
+               </button>
+             </div>
+           </div>
+         </div>
+       )}
+     </div>
+   );
+ }
+
 
 const styles = {
   heading: { fontSize: '22px', fontWeight: '800', color: '#333', marginBottom: '20px' },
@@ -159,4 +293,54 @@ const styles = {
   badge: { padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600' },
   count: { padding: '12px 16px', fontSize: '12px', color: '#aaa', margin: 0, borderTop: '1px solid #f0f0f0' },
   center: { textAlign: 'center', padding: '40px', color: '#888' },
+
+  // Action buttons
+  actionBtn: {
+    padding: '4px 10px',
+    fontSize: '12px',
+    border: 'none',
+    borderRadius: '6px',
+    background: '#424242',
+    color: '#fff',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  },
+
+  // Modal styles
+  modalOverlay: {
+    position: 'fixed',
+    top: 0, left: 0, right: 0, bottom: 0,
+    background: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  },
+  modal: {
+    background: '#fff',
+    padding: '24px',
+    borderRadius: '12px',
+    width: '100%',
+    maxWidth: '420px',
+    boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+  },
+  textarea: {
+    width: '100%',
+    padding: '10px',
+    borderRadius: '8px',
+    border: '1px solid #ddd',
+    fontSize: '14px',
+    resize: 'vertical',
+  },
+  modalBtn: {
+    flex: 1,
+    padding: '10px 16px',
+    border: 'none',
+    borderRadius: '8px',
+    background: '#c62828',
+    color: '#fff',
+    fontWeight: 600,
+    cursor: 'pointer',
+    fontSize: '14px',
+  },
 };
