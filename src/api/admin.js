@@ -16,6 +16,13 @@ export const filterCreators = (params) => client.get('/admin/filterCreators', { 
 export const getIndustries = () => client.get('/admin/industries');
 export const getJobs = (params) => client.get('/admin/getJobs', { params });
 
+// Business verification
+export const getBusinessRegistrations = () => client.get('/admin/getBusinessRegistrations');
+export const getPendingBusinessRegistrations = () => client.get('/admin/getPendingBusinessRegistrations');
+export const getVerifiedBusinessRegistrations = () => client.get('/admin/getVerifiedBusinessRegistrations');
+export const approveBusinessRegistration = (business_id, status, reason = '') =>
+  client.post('/admin/approveBusiness', { business_id, status, reason });
+
 // Content review endpoints
 export const getSubmissions = (params) => client.get('/admin/getSubmissions', { params });
 export const approveSubmission = (interestId) => client.post('/jobs/approveWorkDone', { interest_id: interestId });

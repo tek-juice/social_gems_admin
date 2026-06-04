@@ -2,30 +2,31 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 const adminLinks = [
-  { to: '/', label: 'Dashboard', icon: '📊' },
-  { to: '/users', label: 'Users', icon: '👥' },
-  { to: '/creators', label: 'Creators', icon: '✨' },
-  { to: '/campaigns', label: 'Campaigns', icon: '📢' },
-  { to: '/jobs', label: 'Job Board', icon: '💼' },
-  { to: '/submissions', label: 'Submissions', icon: '📝' },
-  { to: '/finances', label: 'Finances', icon: '💰' },
-  { to: '/community', label: 'Community', icon: '💬' },
+  { to: '/', label: 'Dashboard', icon: 'DB' },
+  { to: '/users', label: 'Users', icon: 'US' },
+  { to: '/creators', label: 'Creators', icon: 'CR' },
+  { to: '/campaigns', label: 'Campaigns', icon: 'CP' },
+  { to: '/jobs', label: 'Job Board', icon: 'JB' },
+  { to: '/business-verifications', label: 'Business Verification', icon: 'BV' },
+  { to: '/submissions', label: 'Submissions', icon: 'SB' },
+  { to: '/finances', label: 'Finances', icon: 'FN' },
+  { to: '/community', label: 'Community', icon: 'CM' },
 ];
 
 const superAdminExtra = [
-  { to: '/campaign-managers', label: 'Campaign Managers', icon: '🎯' },
-  { to: '/pending-deletions', label: 'Pending Deletions', icon: '🗑️' },
+  { to: '/campaign-managers', label: 'Campaign Managers', icon: 'MG' },
+  { to: '/pending-deletions', label: 'Pending Deletions', icon: 'PD' },
 ];
 
 const managerLinks = [
-  { to: '/cm-dashboard', label: 'My Dashboard', icon: '📊' },
+  { to: '/cm-dashboard', label: 'My Dashboard', icon: 'DB' },
 ];
 
 export default function Sidebar() {
   const navigate = useNavigate();
   const { role, isSuperAdmin, isCampaignManager, user } = useAuth();
 
-  // If role is empty (legacy session pre-role-storage), treat as super_admin in the UI
+  // If role is empty (legacy session pre-role-storage), treat as super_admin in the UI.
   const effectivelyAdmin = !role || isSuperAdmin;
   const links = isCampaignManager
     ? managerLinks
@@ -66,7 +67,7 @@ export default function Sidebar() {
         </nav>
       </div>
       <button style={styles.logout} onClick={handleLogout}>
-        <span style={styles.linkIcon}>🚪</span>
+        <span style={styles.linkIcon}>LO</span>
         Logout
       </button>
     </div>
@@ -103,7 +104,7 @@ const styles = {
     color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '15px',
     fontWeight: '500', borderLeft: '3px solid transparent', transition: 'all 0.2s ease'
   },
-  linkIcon: { fontSize: '18px', width: '24px' },
+  linkIcon: { fontSize: '12px', width: '24px', fontWeight: '800', letterSpacing: '0' },
   activeLink: { color: '#F9D769', background: 'rgba(255,255,255,0.1)', borderLeft: '3px solid #F9D769' },
   logout: {
     margin: '0 16px 16px', padding: '14px', background: 'rgba(255,255,255,0.1)',

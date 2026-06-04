@@ -11,6 +11,7 @@ import Community from './pages/Community';
 import CampaignManagerDashboard from './pages/CampaignManagerDashboard';
 import CampaignManagersAdmin from './pages/CampaignManagersAdmin';
 import PendingDeletions from './pages/PendingDeletions';
+import BusinessVerifications from './pages/BusinessVerifications';
 import Sidebar from './components/Sidebar';
 import { useAuth } from './hooks/useAuth';
 
@@ -57,6 +58,7 @@ export default function App() {
         <Route path="/campaigns" element={<PrivateLayout><Campaigns /></PrivateLayout>} />
         <Route path="/creators" element={<PrivateLayout><Creators /></PrivateLayout>} />
         <Route path="/jobs" element={<PrivateLayout><Jobs /></PrivateLayout>} />
+        <Route path="/business-verifications" element={<PrivateLayout><BusinessVerifications /></PrivateLayout>} />
         <Route path="/submissions" element={<PrivateLayout><Submissions /></PrivateLayout>} />
         <Route path="/finances" element={<PrivateLayout><Finances /></PrivateLayout>} />
         <Route path="/community" element={<PrivateLayout><Community /></PrivateLayout>} />
