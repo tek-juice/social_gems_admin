@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -17,12 +18,19 @@ import { useAuth } from './hooks/useAuth';
 
 function PrivateLayout({ children }) {
   const token = localStorage.getItem('admin_token');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   if (!token) return <Navigate to="/login" replace />;
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc' }}>
-      <Sidebar />
-      <main style={{ marginLeft: '260px', flex: 1, padding: '16px 0', width: 'calc(100% - 260px)', boxSizing: 'border-box', minWidth: 0 }}>
-        {children}
+    <div style={styles.shell}>
+      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed((value) => !value)} />
+      <main style={{
+        ...styles.main,
+        marginLeft: sidebarCollapsed ? '82px' : '236px',
+        width: sidebarCollapsed ? 'calc(100% - 82px)' : 'calc(100% - 236px)',
+      }}>
+        <div style={styles.content}>
+          {children}
+        </div>
       </main>
     </div>
   );
@@ -80,3 +88,23 @@ function RoleDefaultRedirect() {
   const { isCampaignManager } = useAuth();
   return <Navigate to={isCampaignManager ? '/cm-dashboard' : '/'} replace />;
 }
+
+const styles = {
+  shell: {
+    display: 'flex',
+    minHeight: '100vh',
+    background: '#f8fafc',
+    width: '100%',
+    overflowX: 'hidden',
+  },
+  main: {
+    flex: 1,
+    minWidth: 0,
+    padding: '24px 24px 28px',
+    transition: 'margin-left 0.18s ease, width 0.18s ease',
+  },
+  content: {
+    width: '100%',
+    minWidth: 0,
+  },
+};

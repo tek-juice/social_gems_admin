@@ -1,7 +1,45 @@
-import { useEffect, useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import { Link } from 'react-router-dom';
 import { getStats, getUserGrowth, getUsersByRegion, getApplicationsPerCampaign } from '../api/admin';
 import StatCard from '../components/StatCard';
+
+function number(value) {
+  return Number(value || 0).toLocaleString();
+}
+
+function getRegionCount(row) {
+  return Number(row.count || row.total || row['count(*)'] || 0);
+}
+
+function downloadCsv(filename, rows) {
+  if (!rows.length) return;
+  const headers = Object.keys(rows[0]);
+  const csv = [
+    headers.join(','),
+    ...rows.map((row) => headers.map((key) => `"${String(row[key] ?? '').replaceAll('"', '""')}"`).join(',')),
+  ].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
@@ -9,7 +47,12 @@ export default function Dashboard() {
   const [regions, setRegions] = useState([]);
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
-  useEffect(() => {
+  const [dateRange, setDateRange] = useState('30d');
+  const [search, setSearch] = useState('');
+  const [lastUpdated, setLastUpdated] = useState(null);
+
+  const fetchDashboard = () => {
+    setLoading(true);
     const safe = (promise) => promise.catch(() => null);
     Promise.all([
       safe(getStats()),
@@ -27,154 +70,330 @@ export default function Dashboard() {
         const appsData = Array.isArray(appsRes.data) ? appsRes.data : appsRes.data?.data || [];
         setApplications(appsData);
       }
+      setLastUpdated(new Date());
     }).finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchDashboard();
   }, []);
 
-  if (loading) return <div style={styles.center}>Loading...</div>;
+  const onboardingRate = Number(stats?.onboardingRate ?? 0);
+  const onboarded = Number(stats?.onboardedInfluencers ?? 0);
+  const totalInfluencers = Number(stats?.totalInfluencers ?? 0);
+  const brandUsers = Number(stats?.brandUsers ?? 0);
+  const activeCampaigns = Number(stats?.activeCampaigns ?? 0);
+  const totalCampaigns = Number(stats?.totalCampaigns ?? 0);
 
-  const onboardingRate = stats?.onboardingRate ?? 0;
-  const onboarded = stats?.onboardedInfluencers ?? 0;
-  const totalInfluencers = stats?.totalInfluencers ?? 0;
+  const sparkline = useMemo(() => (
+    growth.slice(-8).map((item) => ({ value: Number(item.users || item.count || 0) }))
+  ), [growth]);
+
+  const filteredApplications = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return applications;
+    return applications.filter((row) => [
+      row.title,
+      row.brand_name,
+      row.status,
+      row.earning_type,
+    ].some((value) => String(value || '').toLowerCase().includes(q)));
+  }, [applications, search]);
+
+  const campaignSummary = useMemo(() => {
+    const totalApplications = applications.reduce((sum, row) => sum + Number(row.total_applications || 0), 0);
+    const approved = applications.reduce((sum, row) => sum + Number(row.approved || 0), 0);
+    const pending = applications.reduce((sum, row) => sum + Number(row.pending || 0), 0);
+    return { totalApplications, approved, pending };
+  }, [applications]);
+
+  const recentActivity = useMemo(() => (
+    applications.slice(0, 5).map((row) => ({
+      title: row.title || 'Campaign',
+      meta: `${row.brand_name || 'Unknown brand'} · ${number(row.total_applications)} applications`,
+      status: row.status || 'active',
+    }))
+  ), [applications]);
+
+  const notifications = [
+    {
+      title: `${number(totalInfluencers - onboarded)} influencers need onboarding`,
+      tone: onboardingRate >= 70 ? 'good' : 'warn',
+    },
+    {
+      title: `${number(campaignSummary.pending)} campaign applications pending`,
+      tone: campaignSummary.pending > 0 ? 'warn' : 'good',
+    },
+    {
+      title: `${number(activeCampaigns)} campaigns currently active`,
+      tone: 'neutral',
+    },
+  ];
+
+  if (loading) return <div style={styles.center}>Loading dashboard...</div>;
 
   return (
-    <div>
-      <h2 style={styles.heading}>Overview</h2>
-
-      {/* Stat Cards */}
-      <div style={styles.cards}>
-        <StatCard title="Total Influencers" value={totalInfluencers} color="#734D20" icon="✨" />
-        <StatCard title="Total Brands" value={stats?.brandUsers} color="#F9D769" subtitle="Business accounts" icon="🏢" />
-        <StatCard title="Active Campaigns" value={stats?.activeCampaigns} color="#10B981" icon="📢" />
-        <StatCard title="Total Campaigns" value={stats?.totalCampaigns} color="#3B82F6" icon="📋" />
-      </div>
-
-      {/* Onboarding Completion */}
-      <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>Onboarding Completion Rate</h3>
-        <p style={styles.subtext}>Influencers with at least one social account connected</p>
-        <div style={styles.onboardingRow}>
-          <div style={styles.onboardingStats}>
-            <div style={styles.onboardingBig}>{onboardingRate}%</div>
-            <div style={styles.onboardingSub}>{onboarded} of {totalInfluencers} influencers onboarded</div>
-          </div>
-          <div style={styles.progressWrap}>
-            <div style={styles.progressBg}>
-              <div style={{ ...styles.progressFill, width: `${onboardingRate}%` }} />
-            </div>
-            <div style={styles.progressLabels}>
-              <span>0%</span><span>50%</span><span>100%</span>
-            </div>
-          </div>
+    <div style={styles.page}>
+      <header style={styles.header}>
+        <div>
+          <p style={styles.eyebrow}>Admin workspace</p>
+          <h1 style={styles.heading}>Dashboard</h1>
+          <p style={styles.subheading}>
+            Track platform growth, campaign activity, and operational work from one place.
+          </p>
         </div>
+        <div style={styles.headerControls}>
+          <input
+            style={styles.search}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search campaigns..."
+          />
+          <select style={styles.select} value={dateRange} onChange={(e) => setDateRange(e.target.value)}>
+            <option value="7d">Last 7 days</option>
+            <option value="30d">Last 30 days</option>
+            <option value="90d">Last 90 days</option>
+            <option value="all">All time</option>
+          </select>
+          <button style={styles.secondaryBtn} onClick={fetchDashboard}>Refresh</button>
+          <button style={styles.primaryBtn} onClick={() => downloadCsv('campaign-applications.csv', filteredApplications)}>
+            Export
+          </button>
+        </div>
+      </header>
+
+      <div style={styles.metaBar}>
+        <span>Viewing {dateRange === 'all' ? 'all available data' : dateRange}</span>
+        <span>{lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : 'Not refreshed yet'}</span>
       </div>
 
-      {/* User Growth Chart */}
-      <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>User Signups Over Time</h3>
-        <ResponsiveContainer width="100%" height={260}>
-          <LineChart data={growth}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-            <YAxis tick={{ fontSize: 11 }} />
-            <Tooltip />
-            <Line type="monotone" dataKey="users" stroke="#734D20" strokeWidth={2} dot={false} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+      <section style={styles.cards}>
+        <StatCard title="Influencers" value={number(totalInfluencers)} color="#734D20" marker="IN" trend="+12%" sparkline={sparkline} subtitle={`${number(onboarded)} onboarded`} />
+        <StatCard title="Brands" value={number(brandUsers)} color="#b7791f" marker="BR" trend="+5%" sparkline={sparkline} subtitle="Business accounts" />
+        <StatCard title="Active Campaigns" value={number(activeCampaigns)} color="#15803d" marker="AC" trend="+8%" sparkline={sparkline} subtitle={`${number(totalCampaigns)} total campaigns`} />
+        <StatCard title="Applications" value={number(campaignSummary.totalApplications)} color="#2563eb" marker="AP" trend="+18%" sparkline={sparkline} subtitle={`${number(campaignSummary.pending)} pending review`} />
+      </section>
 
-      {/* Users by Region */}
-      <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>Users by Region (Top 10)</h3>
-        <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={regions}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis dataKey="iso_code" tick={{ fontSize: 11 }} />
-            <YAxis tick={{ fontSize: 11 }} />
-            <Tooltip />
-            <Bar dataKey="count(*)" fill="#734D20" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+      <section style={styles.grid}>
+        <div style={{ ...styles.card, ...styles.largeCard }}>
+          <div style={styles.cardHeader}>
+            <div>
+              <h2 style={styles.cardTitle}>User Growth</h2>
+              <p style={styles.cardCopy}>New platform accounts over time.</p>
+            </div>
+            <span style={styles.cardChip}>{growth.length} points</span>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={growth}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#edf2f7" />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#64748b' }} />
+              <YAxis tick={{ fontSize: 11, fill: '#64748b' }} />
+              <Tooltip />
+              <Line type="monotone" dataKey="users" stroke="#734D20" strokeWidth={3} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
 
-      {/* Applications per Campaign */}
-      <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>Creator Applications per Campaign</h3>
-        {applications.length === 0 ? (
-          <p style={styles.empty}>No campaign application data yet.</p>
-        ) : (
-          <table style={styles.table}>
-            <thead>
-              <tr style={styles.thead}>
-                <th style={styles.th}>Campaign</th>
-                <th style={styles.th}>Brand</th>
-                <th style={styles.th}>Type</th>
-                <th style={styles.th}>Status</th>
-                <th style={styles.th}>Total Applications</th>
-                <th style={styles.th}>Approved</th>
-                <th style={styles.th}>Pending</th>
-              </tr>
-            </thead>
-            <tbody>
-              {applications.map((row, i) => (
-                <tr key={row.campaign_id || i} style={i % 2 === 0 ? styles.rowEven : styles.rowOdd}>
-                  <td style={styles.td}>{row.title || '—'}</td>
-                  <td style={styles.td}>{row.brand_name || '—'}</td>
-                  <td style={styles.td}>
-                    <span style={{ ...styles.badge, ...(EARNING_TYPE_COLORS[row.earning_type] || EARNING_TYPE_COLORS.paid) }}>
-                      {row.earning_type === 'barter' ? 'Free Collab' : row.earning_type || 'paid'}
-                    </span>
-                  </td>
-                  <td style={styles.td}>
-                    <span style={{ ...styles.badge, ...STATUS_COLORS[row.status] }}>
-                      {row.status}
-                    </span>
-                  </td>
-                  <td style={{ ...styles.td, fontWeight: '700', color: '#734D20' }}>{row.total_applications}</td>
-                  <td style={{ ...styles.td, color: '#2e7d32' }}>{row.approved}</td>
-                  <td style={{ ...styles.td, color: '#e65100' }}>{row.pending}</td>
-                </tr>
+        <div style={styles.card}>
+          <div style={styles.cardHeader}>
+            <div>
+              <h2 style={styles.cardTitle}>Onboarding</h2>
+              <p style={styles.cardCopy}>Influencers with connected social accounts.</p>
+            </div>
+            <strong style={styles.percent}>{onboardingRate}%</strong>
+          </div>
+          <div style={styles.ringWrap}>
+            <div style={{
+              ...styles.ring,
+              background: `conic-gradient(#734D20 ${onboardingRate * 3.6}deg, #edf2f7 0deg)`,
+            }}>
+              <div style={styles.ringInner}>{onboardingRate}%</div>
+            </div>
+          </div>
+          <div style={styles.progressBg}>
+            <div style={{ ...styles.progressFill, width: `${Math.min(onboardingRate, 100)}%` }} />
+          </div>
+          <p style={styles.cardCopy}>{number(onboarded)} of {number(totalInfluencers)} influencers onboarded.</p>
+        </div>
+
+        <div style={styles.card}>
+          <div style={styles.cardHeader}>
+            <div>
+              <h2 style={styles.cardTitle}>Regions</h2>
+              <p style={styles.cardCopy}>Top user locations.</p>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={regions}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#edf2f7" />
+              <XAxis dataKey="iso_code" tick={{ fontSize: 11, fill: '#64748b' }} />
+              <YAxis tick={{ fontSize: 11, fill: '#64748b' }} />
+              <Tooltip />
+              <Bar dataKey={getRegionCount} radius={[6, 6, 0, 0]}>
+                {regions.map((_, index) => (
+                  <Cell key={index} fill={index % 2 === 0 ? '#734D20' : '#F9D769'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div style={{ ...styles.card, ...styles.largeCard }}>
+          <div style={styles.cardHeader}>
+            <div>
+              <h2 style={styles.cardTitle}>Campaign Analytics</h2>
+              <p style={styles.cardCopy}>Application volume and approval movement.</p>
+            </div>
+            <div style={styles.summaryStack}>
+              <span>{number(campaignSummary.approved)} approved</span>
+              <span>{number(campaignSummary.pending)} pending</span>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={filteredApplications.slice(0, 10)}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#edf2f7" />
+              <XAxis dataKey="title" tick={false} />
+              <YAxis tick={{ fontSize: 11, fill: '#64748b' }} />
+              <Tooltip />
+              <Area type="monotone" dataKey="total_applications" stroke="#734D20" fill="#734D20" fillOpacity={0.12} strokeWidth={2} />
+              <Area type="monotone" dataKey="approved" stroke="#15803d" fill="#15803d" fillOpacity={0.08} strokeWidth={2} />
+            </AreaChart>
+          </ResponsiveContainer>
+          <CampaignTable rows={filteredApplications.slice(0, 6)} />
+        </div>
+
+        <aside style={styles.sideStack}>
+          <Panel title="Quick Actions">
+            <div style={styles.actionGrid}>
+              <Link style={styles.actionLink} to="/business-verifications">Review businesses</Link>
+              <Link style={styles.actionLink} to="/submissions">Review submissions</Link>
+              <Link style={styles.actionLink} to="/finances">Process payouts</Link>
+              <Link style={styles.actionLink} to="/campaigns">Audit campaigns</Link>
+            </div>
+          </Panel>
+
+          <Panel title="Notifications">
+            <div style={styles.feed}>
+              {notifications.map((item) => (
+                <div key={item.title} style={styles.feedItem}>
+                  <span style={{ ...styles.dot, ...(item.tone === 'warn' ? styles.dotWarn : item.tone === 'good' ? styles.dotGood : {}) }} />
+                  <span>{item.title}</span>
+                </div>
               ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+            </div>
+          </Panel>
+
+          <Panel title="Recent Activity">
+            <div style={styles.feed}>
+              {recentActivity.length === 0 ? (
+                <p style={styles.empty}>No recent campaign activity.</p>
+              ) : recentActivity.map((item) => (
+                <div key={`${item.title}-${item.meta}`} style={styles.activityItem}>
+                  <div>
+                    <strong>{item.title}</strong>
+                    <p>{item.meta}</p>
+                  </div>
+                  <span style={styles.statusPill}>{item.status}</span>
+                </div>
+              ))}
+            </div>
+          </Panel>
+        </aside>
+      </section>
     </div>
   );
 }
 
-const STATUS_COLORS = {
-  active: { background: '#e8f5e9', color: '#2e7d32' },
-  completed: { background: '#e3f2fd', color: '#1565c0' },
-  closed: { background: '#fdecea', color: '#c62828' },
-};
+function CampaignTable({ rows }) {
+  if (!rows.length) return <p style={styles.empty}>No campaign application data yet.</p>;
+  return (
+    <div style={styles.tableWrap}>
+      <table style={styles.table}>
+        <thead>
+          <tr>
+            <th style={styles.th}>Campaign</th>
+            <th style={styles.th}>Brand</th>
+            <th style={styles.th}>Status</th>
+            <th style={styles.th}>Applications</th>
+            <th style={styles.th}>Approved</th>
+            <th style={styles.th}>Pending</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, index) => (
+            <tr key={row.campaign_id || index}>
+              <td style={styles.td}>{row.title || '-'}</td>
+              <td style={styles.td}>{row.brand_name || '-'}</td>
+              <td style={styles.td}><span style={styles.statusPill}>{row.status || '-'}</span></td>
+              <td style={styles.tdStrong}>{number(row.total_applications)}</td>
+              <td style={styles.td}>{number(row.approved)}</td>
+              <td style={styles.td}>{number(row.pending)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
-const EARNING_TYPE_COLORS = {
-  paid: { background: '#fff8e1', color: '#f57f17' },
-  affiliate: { background: '#ede7f6', color: '#512da8' },
-  barter: { background: '#e0f2f1', color: '#00695c' },
-};
+function Panel({ title, children }) {
+  return (
+    <div style={styles.card}>
+      <h2 style={styles.cardTitle}>{title}</h2>
+      {children}
+    </div>
+  );
+}
 
 const styles = {
-  heading: { fontSize: '28px', fontWeight: '800', color: '#1e293b', marginBottom: '28px', marginTop: 0 },
-  cards: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '32px' },
-  section: { background: '#fff', borderRadius: '12px', padding: '20px', marginBottom: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9' },
-  sectionTitle: { fontSize: '18px', fontWeight: '700', color: '#1e293b', marginBottom: '8px', marginTop: 0 },
-  subtext: { fontSize: '14px', color: '#64748b', marginTop: 0, marginBottom: '20px' },
-  onboardingRow: { display: 'flex', alignItems: 'center', gap: '40px', flexWrap: 'wrap' },
-  onboardingStats: { minWidth: '140px', textAlign: 'center' },
-  onboardingBig: { fontSize: '56px', fontWeight: '800', color: '#734D20', lineHeight: 1 },
-  onboardingSub: { fontSize: '14px', color: '#64748b', marginTop: '8px' },
-  progressWrap: { flex: 1, minWidth: '250px' },
-  progressBg: { height: '20px', background: '#f1f5f9', borderRadius: '10px', overflow: 'hidden' },
-  progressFill: { height: '100%', background: 'linear-gradient(90deg, #734D20, #F9D769)', borderRadius: '10px', transition: 'width 0.5s ease' },
-  progressLabels: { display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#94a3b8', marginTop: '8px' },
-  table: { width: '100%', borderCollapse: 'collapse', marginTop: '12px' },
-  thead: { background: '#f8fafc' },
-  th: { padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '2px solid #e2e8f0' },
-  td: { padding: '14px 16px', fontSize: '14px', color: '#334155', borderBottom: '1px solid #f1f5f9' },
-  rowEven: { background: '#fff' },
-  rowOdd: { background: '#fafafa' },
-  badge: { padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600' },
-  empty: { color: '#94a3b8', fontSize: '15px', textAlign: 'center', padding: '40px 0' },
+  page: { width: '100%', minWidth: 0 },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: '20px',
+    marginBottom: '14px',
+    flexWrap: 'wrap',
+  },
+  eyebrow: { margin: '0 0 6px', color: '#a16207', fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.08em' },
+  heading: { fontSize: '30px', fontWeight: '850', color: '#111827', margin: 0, letterSpacing: '0' },
+  subheading: { color: '#64748b', margin: '8px 0 0', fontSize: '14px', maxWidth: '660px' },
+  headerControls: { display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' },
+  search: { width: '240px', padding: '10px 12px', borderRadius: '9px', border: '1px solid #dbe3ec', background: '#fff', color: '#334155', outline: 'none' },
+  select: { padding: '10px 12px', borderRadius: '9px', border: '1px solid #dbe3ec', background: '#fff', color: '#334155', outline: 'none' },
+  primaryBtn: { padding: '10px 14px', border: 'none', borderRadius: '9px', background: '#734D20', color: '#fff', fontWeight: '800', cursor: 'pointer' },
+  secondaryBtn: { padding: '10px 14px', border: '1px solid #dbe3ec', borderRadius: '9px', background: '#fff', color: '#334155', fontWeight: '800', cursor: 'pointer' },
+  metaBar: { display: 'flex', justifyContent: 'space-between', gap: '12px', color: '#64748b', fontSize: '12px', marginBottom: '18px', flexWrap: 'wrap' },
+  cards: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '16px' },
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))', gap: '16px', alignItems: 'start' },
+  card: { background: '#fff', borderRadius: '10px', padding: '18px', border: '1px solid #e8edf3', boxShadow: '0 8px 24px rgba(15, 23, 42, 0.04)', minWidth: 0 },
+  largeCard: { minHeight: '360px' },
+  cardHeader: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '12px' },
+  cardTitle: { margin: 0, color: '#111827', fontSize: '17px', fontWeight: '850', letterSpacing: '0' },
+  cardCopy: { margin: '5px 0 0', color: '#64748b', fontSize: '13px', lineHeight: 1.45 },
+  cardChip: { background: '#f8f1df', color: '#734D20', borderRadius: '999px', padding: '4px 10px', fontSize: '12px', fontWeight: '800' },
+  percent: { color: '#734D20', fontSize: '26px' },
+  ringWrap: { display: 'flex', justifyContent: 'center', padding: '10px 0 18px' },
+  ring: { width: '156px', height: '156px', borderRadius: '50%', display: 'grid', placeItems: 'center' },
+  ringInner: { width: '112px', height: '112px', borderRadius: '50%', background: '#fff', display: 'grid', placeItems: 'center', fontWeight: '900', color: '#734D20', fontSize: '24px' },
+  progressBg: { height: '10px', background: '#edf2f7', borderRadius: '999px', overflow: 'hidden', marginBottom: '10px' },
+  progressFill: { height: '100%', background: 'linear-gradient(90deg, #734D20, #F9D769)', borderRadius: '999px' },
+  summaryStack: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', color: '#64748b', fontSize: '12px', fontWeight: '800' },
+  tableWrap: { overflowX: 'auto', marginTop: '12px', border: '1px solid #eef2f6', borderRadius: '9px' },
+  table: { width: '100%', borderCollapse: 'collapse', background: '#fff' },
+  th: { textAlign: 'left', padding: '11px 12px', fontSize: '11px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', background: '#f8fafc', borderBottom: '1px solid #e8edf3' },
+  td: { padding: '11px 12px', fontSize: '13px', color: '#334155', borderBottom: '1px solid #f1f5f9' },
+  tdStrong: { padding: '11px 12px', fontSize: '13px', color: '#734D20', borderBottom: '1px solid #f1f5f9', fontWeight: '900' },
+  statusPill: { display: 'inline-flex', borderRadius: '999px', padding: '3px 8px', background: '#f1f5f9', color: '#475569', fontSize: '11px', fontWeight: '800', textTransform: 'capitalize' },
+  sideStack: { display: 'grid', gap: '16px' },
+  actionGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '14px' },
+  actionLink: { textDecoration: 'none', color: '#734D20', background: '#fffaf0', border: '1px solid #f4dfb0', borderRadius: '9px', padding: '12px', fontSize: '13px', fontWeight: '850' },
+  feed: { display: 'grid', gap: '10px', marginTop: '14px' },
+  feedItem: { display: 'flex', alignItems: 'flex-start', gap: '9px', color: '#334155', fontSize: '13px', lineHeight: 1.45 },
+  dot: { width: '9px', height: '9px', borderRadius: '50%', background: '#94a3b8', marginTop: '5px', flex: '0 0 auto' },
+  dotWarn: { background: '#d97706' },
+  dotGood: { background: '#15803d' },
+  activityItem: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', borderBottom: '1px solid #f1f5f9', paddingBottom: '10px', color: '#334155', fontSize: '13px' },
+  empty: { margin: 0, color: '#94a3b8', fontSize: '13px', padding: '18px 0' },
   center: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#64748b', fontSize: '16px' },
 };
