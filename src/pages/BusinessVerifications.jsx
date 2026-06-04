@@ -66,6 +66,10 @@ export default function BusinessVerifications() {
         b.name,
         b.business_name,
         b.email,
+        b.business_email,
+        b.login_email,
+        b.owner_email,
+        b.staff_emails,
         b.phone,
         b.business_id,
         b.owner_id,
@@ -180,6 +184,7 @@ export default function BusinessVerifications() {
                     <td style={styles.td}>
                       <div style={styles.primaryText}>{business.name || business.business_name || 'Unnamed business'}</div>
                       <div style={styles.muted}>{business.business_id}</div>
+                      <div style={styles.muted}>{business.created_by_type ? `Created by: ${business.created_by_type}` : ''}</div>
                       {business.website && (
                         <a style={styles.link} href={business.website} target="_blank" rel="noreferrer">
                           Website
@@ -187,14 +192,20 @@ export default function BusinessVerifications() {
                       )}
                     </td>
                     <td style={styles.td}>
-                      <div>{business.email || 'No email'}</div>
+                      <div>{business.login_email || business.email || 'No login email'}</div>
+                      {business.business_email && business.business_email !== business.login_email && (
+                        <div style={styles.muted}>Profile: {business.business_email}</div>
+                      )}
+                      {business.staff_emails && (
+                        <div style={styles.muted}>Staff: {business.staff_emails}</div>
+                      )}
                       <div style={styles.muted}>{business.phone || 'No phone'}</div>
                     </td>
                     <td style={styles.td}>
                       <div>{business.is_registered === 'yes' ? 'Registered' : 'Not registered'}</div>
                       <div style={styles.muted}>{business.registration_number || business.reg_number || 'No registration no.'}</div>
                     </td>
-                    <td style={styles.td}>{business.country || business.iso_code || '-'}</td>
+                    <td style={styles.td}>{business.country_name || business.country || business.iso2 || business.iso3 || '-'}</td>
                     <td style={styles.td}><Badge value={business.verification_status} /></td>
                     <td style={styles.td}>{business.created_at ? new Date(business.created_at).toLocaleDateString() : '-'}</td>
                     <td style={styles.td}>
