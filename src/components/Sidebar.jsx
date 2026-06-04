@@ -133,8 +133,9 @@ const styles = {
     boxShadow: '4px 0 22px rgba(37, 24, 10, 0.18)',
     zIndex: 100,
     transition: 'width 0.18s ease',
+    overflow: 'hidden',
   },
-  top: { minWidth: 0 },
+  top: { minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', flex: 1 },
   logo: {
     padding: '0 8px 16px',
     borderBottom: '1px solid rgba(255,255,255,0.12)',
@@ -157,7 +158,17 @@ const styles = {
     fontWeight: '800',
     marginBottom: '14px',
   },
-  nav: { display: 'flex', flexDirection: 'column', gap: '14px' },
+  nav: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '14px',
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    minHeight: 0,
+    paddingRight: '2px',
+    scrollbarWidth: 'thin',
+    scrollbarColor: 'rgba(249, 215, 105, 0.55) transparent',
+  },
   section: { display: 'flex', flexDirection: 'column', gap: '4px' },
   sectionLabel: {
     color: 'rgba(255,255,255,0.42)',
@@ -204,6 +215,8 @@ const styles = {
     borderColor: 'rgba(249, 215, 105, 0.28)',
   },
   logout: {
+    flex: '0 0 auto',
+    marginTop: '14px',
     padding: '10px 12px',
     background: 'rgba(255,255,255,0.1)',
     color: '#fff',
