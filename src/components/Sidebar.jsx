@@ -121,11 +121,12 @@ export default function Sidebar({ collapsed = false, onToggle }) {
 
 const styles = {
   sidebar: {
-    minHeight: '100vh',
+    height: '100vh',
+    minHeight: 0,
     background: 'linear-gradient(180deg, #6f481d 0%, #4f3518 100%)',
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     padding: '18px 12px',
     position: 'fixed',
     top: 0,
@@ -134,8 +135,9 @@ const styles = {
     zIndex: 100,
     transition: 'width 0.18s ease',
     overflow: 'hidden',
+    boxSizing: 'border-box',
   },
-  top: { minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', flex: 1 },
+  top: { minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', flex: '1 1 auto' },
   logo: {
     padding: '0 8px 16px',
     borderBottom: '1px solid rgba(255,255,255,0.12)',
@@ -162,6 +164,7 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: '14px',
+    flex: '1 1 auto',
     overflowY: 'auto',
     overflowX: 'hidden',
     minHeight: 0,
