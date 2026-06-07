@@ -73,3 +73,8 @@ export const activateUser = (user_id) =>
 
 export const verifyUserEmail = (email) =>
   client.post('/admin/forceVerifyEmail', { email });
+
+// Platform settings
+export const getAdminSettings = () => client.get('/admin/settings');
+export const updateAdminSetting = (setting_key, setting_value) =>
+  client.put('/admin/settings', { setting_key, setting_value });

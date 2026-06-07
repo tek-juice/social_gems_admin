@@ -24,6 +24,7 @@ const adminSections = [
     links: [
       { to: '/finances', label: 'Finances', icon: 'FN' },
       { to: '/community', label: 'Community', icon: 'CM' },
+      { to: '/settings', label: 'Settings', icon: 'ST' },
     ],
   },
 ];

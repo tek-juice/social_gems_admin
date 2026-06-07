@@ -13,6 +13,7 @@ import CampaignManagerDashboard from './pages/CampaignManagerDashboard';
 import CampaignManagersAdmin from './pages/CampaignManagersAdmin';
 import PendingDeletions from './pages/PendingDeletions';
 import BusinessVerifications from './pages/BusinessVerifications';
+import Settings from './pages/Settings';
 import Sidebar from './components/Sidebar';
 import { useAuth } from './hooks/useAuth';
 
@@ -70,6 +71,7 @@ export default function App() {
         <Route path="/submissions" element={<PrivateLayout><Submissions /></PrivateLayout>} />
         <Route path="/finances" element={<PrivateLayout><Finances /></PrivateLayout>} />
         <Route path="/community" element={<PrivateLayout><Community /></PrivateLayout>} />
+        <Route path="/settings" element={<PrivateLayout><Settings /></PrivateLayout>} />
         <Route path="/campaign-managers" element={
           <PrivateLayout>
             <RoleGuard allow={['super_admin','SUPER_ADMIN']}>
